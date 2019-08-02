@@ -13,7 +13,12 @@
       ></audio>
       <div class="timebar">
         <div>
-          <progressbar :percent="percent"></progressbar>
+          <progressbar
+            :percent="percent"
+            :fixduration="fixduration"
+            @newcurrentTime="newcurrentTimes"
+            @backcurrentTime="backcurrentTimes"
+          ></progressbar>
         </div>
         <div>
           <span>{{durationformat}}</span>
@@ -61,10 +66,12 @@ export default {
       currentTime: 0,
       percent: 0,
       time: null,
-      fixduration: 0
+      fixduration: 0,
+      firsttime: 0
     };
   },
   methods: {
+    //開始暫停
     playmusic() {
       if (this.duration == 0) {
         this.duration = this.$refs.mmAudio.duration;
@@ -81,6 +88,7 @@ export default {
         this.subduration();
       });
     },
+    //下一首
     nextmusic() {
       this.playbtn = pausebtn;
       let index = this.index + 1;
@@ -94,6 +102,7 @@ export default {
         this.$refs.mmAudio.play();
       });
     },
+    //上一首
     backmusic() {
       this.playbtn = pausebtn;
       let index = this.index - 1;
@@ -107,6 +116,7 @@ export default {
         this.$refs.mmAudio.play();
       });
     },
+    //循環撥放
     loop() {
       this.$refs.mmAudio.currentTime = 0;
       if (this.$refs.mmAudio.loop == true) {
@@ -121,26 +131,29 @@ export default {
         });
       }
     },
+    //隨機撥放
     randommusic() {
       this.random = !this.random;
       let randoms = Math.floor(Math.random() * 4);
       this.index = index;
       this.$nextTick(() => this.$refs.mmAudio.play());
     },
+    //歌曲結束事件
     end(e) {
-      console.log(e);
       if (this.random == false) {
         this.nextmusic();
       } else {
         this.randommusic();
       }
     },
+    //獲得歌曲整首時間
     getduration() {
       if (this.$refs.mmAudio.duration) {
         this.duration = this.$refs.mmAudio.duration;
         this.fixduration = this.$refs.mmAudio.duration;
       }
     },
+    //歌曲時間遞減
     subduration() {
       let vm = this;
       if (this.playbtn == playbtn) {
@@ -151,17 +164,29 @@ export default {
           this.duration = this.duration - 1;
         }, 1000);
       }
+    },
+    //progress前進
+    newcurrentTimes(value) {
+      this.$refs.mmAudio.currentTime = value;
+      this.currentTime = value;
+      let subduration = this.fixduration - this.duration;
+      this.duration = this.duration - value + subduration;
+    },
+    //progress後退
+    backcurrentTimes(value) {
+      this.$refs.mmAudio.currentTime = value;
+      this.currentTime = value;
+      this.duration = this.fixduration - value;
     }
   },
   mounted() {
-    // this.audio = new Audio(this.album[this.index].src);
-    // console.log(this.audio)
     this.audio = this.$refs.mmAudio;
   },
   computed: {
     src() {
       return this.album[this.index].src;
     },
+    //格式轉換
     durationformat() {
       if (this.duration == 0) {
         return " ";
@@ -177,9 +202,7 @@ export default {
     }
   },
   watch: {
-    end(old, news) {
-      console.log(old, news);
-    },
+    //紀錄歌曲行進時間並換算百分比給progress用
     currentTime(time) {
       if (Math.abs(time - this.$refs.mmAudio.currentTime) > 0.5) {
         this.$refs.mmAudio.currentTime = time;
@@ -189,11 +212,10 @@ export default {
       if (this.percent >= 1) {
         this.percent = 0;
       }
-      //console.log(this.fixduration,3)
-      console.log(this.percent);
     },
+    //秒數<0停止遞減
     duration() {
-      if (this.duration == 0) {
+      if (this.duration <= 0) {
         clearInterval(this.time);
       }
     }

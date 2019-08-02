@@ -1,7 +1,12 @@
 <template>
   <div class="mmProgress" ref="mmProgress">
-    <div class="mmProgress-bar"></div>
-    <div class="mmProgress-inner" :style="barWidth" ref="mmProgressInner">
+    <div class="mmProgress-bar" @click="updatecurrentTimes($event)"></div>
+    <div
+      class="mmProgress-inner"
+      @click="backcurrentTimes($event)"
+      :style="barWidth"
+      ref="mmProgressInner"
+    >
       <div class="mmProgress-dot"></div>
     </div>
   </div>
@@ -12,30 +17,43 @@ export default {
     percent: {
       type: [String, Number],
       default: 0
+    },
+    fixduration: {
+      type: Number,
+      default: 0
     }
   },
   data() {
     return {
       barWidth: "width:0px",
       timeprogress: null,
-      timers:0,
-      dotoffset:0
+      timers: 0,
+      dotoffset: 0,
+      updatecurrentTime: 0,
+      backcurrentTime: 0
     };
   },
   methods: {
+    //progress狀態條
     progress() {
-    //   if (this.percent == 0) {
-    //     clearInterval(this.timeprogress);
-    //   } else {
-        this.timeprogress = setInterval(() => {
-          this.dotoffset=200* this.percent;
-          this.barWidth = "width:" + this.dotoffset + "px";
-        }, 1000);
-      //}
+      this.timeprogress = setInterval(() => {
+        this.dotoffset = 200 * this.percent;
+        this.barWidth = "width:" + this.dotoffset + "px";
+      }, 1000);
+    },
+    //點擊未來
+    updatecurrentTimes(e) {
+      this.updatecurrentTime = this.fixduration * (e.offsetX / 200);
+      this.$emit("newcurrentTime", this.updatecurrentTime);
+    },
+    //點擊過去
+    backcurrentTimes(e) {
+      this.backcurrentTime = e.offsetX / 2;
+      this.$emit("backcurrentTime", this.backcurrentTime);
     }
   },
-  mounted(){
-      this.progress()
+  mounted() {
+    this.progress();
   }
 };
 </script>
